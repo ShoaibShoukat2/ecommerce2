@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShoppingBag, Star, Sparkles, Heart } from 'lucide-react';
 import { useCart, useAuth, useWishlist } from '../context/StoreContext';
 import toast from 'react-hot-toast';
+import { formatPrice } from '../utils/currency';
 
 export default function ProductCard({ product, index = 0 }) {
   const { addItem } = useCart();
@@ -99,9 +100,9 @@ export default function ProductCard({ product, index = 0 }) {
               <span className="text-xs text-gray-400">{product.rating} ({product.review_count})</span>
             </div>
             <div className="flex items-center gap-2 mt-3">
-              <span className="text-lg font-semibold text-white">${product.price}</span>
+              <span className="text-lg font-semibold text-white">{formatPrice(product.price)}</span>
               {product.compare_price && (
-                <span className="text-sm text-gray-500 line-through">${product.compare_price}</span>
+                <span className="text-sm text-gray-500 line-through">{formatPrice(product.compare_price)}</span>
               )}
             </div>
           </div>

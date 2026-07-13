@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Package, ShoppingCart, DollarSign, AlertTriangle, Users, FolderOpen } from 'lucide-react';
+import { Package, ShoppingCart, IndianRupee, AlertTriangle, Users, FolderOpen } from 'lucide-react';
 import { getAdminDashboard } from '../../api/admin';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { formatPrice } from '../../utils/currency';
 
 const statCards = [
   { key: 'total_products', label: 'Products', icon: Package, color: 'text-blue-400', bg: 'bg-blue-400/10' },
   { key: 'total_orders', label: 'Orders', icon: ShoppingCart, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-  { key: 'total_revenue', label: 'Revenue', icon: DollarSign, color: 'text-green-400', bg: 'bg-green-400/10', prefix: '$' },
+  { key: 'total_revenue', label: 'Revenue', icon: IndianRupee, color: 'text-green-400', bg: 'bg-green-400/10', format: 'price' },
   { key: 'pending_orders', label: 'Pending', icon: ShoppingCart, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
   { key: 'low_stock_products', label: 'Low Stock', icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-400/10' },
   { key: 'total_users', label: 'Users', icon: Users, color: 'text-gold-400', bg: 'bg-gold-400/10' },
@@ -53,7 +54,7 @@ export default function AdminDashboard() {
               <card.icon size={20} className={card.color} />
             </div>
             <p className="text-2xl font-bold text-white">
-              {card.prefix || ''}{typeof data[card.key] === 'number' && card.key === 'total_revenue' ? Number(data[card.key]).toFixed(2) : data[card.key]}
+              {card.format === 'price' ? formatPrice(data[card.key]) : data[card.key]}
             </p>
             <p className="text-xs text-gray-500 mt-1">{card.label}</p>
           </motion.div>
@@ -76,7 +77,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-500">{order.shipping_name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-white">${order.total}</p>
+                  <p className="text-sm font-semibold text-white">{formatPrice(order.total)}</p>
                   <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${statusColors[order.status]}`}>
                     {order.status}
                   </span>

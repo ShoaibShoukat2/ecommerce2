@@ -5,6 +5,7 @@ import { CreditCard, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { checkout } from '../api';
 import { useCart } from '../context/StoreContext';
+import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '../utils/currency';
 
 export default function Checkout() {
   const { cart, clear } = useCart();
@@ -20,7 +21,7 @@ export default function Checkout() {
     notes: '',
   });
 
-  const shipping = cart.subtotal >= 100 ? 0 : 9.99;
+  const shipping = cart.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = Number(cart.subtotal) + shipping;
 
   const handleChange = (e) => {
@@ -116,7 +117,7 @@ export default function Checkout() {
             {cart.items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span className="text-gray-400">{item.product.name} × {item.quantity}</span>
-                <span className="text-white">${item.total_price}</span>
+                <span className="text-white">{formatPrice(item.total_price)}</span>
               </div>
             ))}
           </div>
@@ -124,15 +125,15 @@ export default function Checkout() {
           <div className="border-t border-dark-700 pt-4 space-y-2 text-sm">
             <div className="flex justify-between text-gray-400">
               <span>Subtotal</span>
-              <span className="text-white">${cart.subtotal}</span>
+              <span className="text-white">{formatPrice(cart.subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-400">
               <span>Shipping</span>
-              <span className="text-white">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+              <span className="text-white">{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
             </div>
             <div className="flex justify-between font-semibold text-lg pt-2">
               <span className="text-white">Total</span>
-              <span className="gold-text">${total.toFixed(2)}</span>
+              <span className="gold-text">{formatPrice(total)}</span>
             </div>
           </div>
 

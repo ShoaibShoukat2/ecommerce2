@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAdminOrders, updateAdminOrderStatus } from '../../api/admin';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { formatPrice } from '../../utils/currency';
 
 const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 const statusColors = {
@@ -75,7 +76,7 @@ export default function AdminOrders() {
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <p className="text-lg font-bold text-white">${order.total}</p>
+                  <p className="text-lg font-bold text-white">{formatPrice(order.total)}</p>
                   <select
                     value={order.status}
                     onClick={(e) => e.stopPropagation()}
@@ -95,7 +96,7 @@ export default function AdminOrders() {
                       {order.items.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm py-1.5">
                           <span className="text-gray-300">{item.product_name} × {item.quantity}</span>
-                          <span className="text-white">${item.price}</span>
+                          <span className="text-white">{formatPrice(item.price)}</span>
                         </div>
                       ))}
                     </div>

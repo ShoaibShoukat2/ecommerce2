@@ -8,6 +8,7 @@ import {
   deleteAdminProduct, updateProductStock, getAdminCategories,
 } from '../../api/admin';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { formatPrice } from '../../utils/currency';
 
 const emptyProduct = {
   name: '', slug: '', description: '', price: '', compare_price: '',
@@ -133,7 +134,7 @@ export default function AdminProducts() {
                       </div>
                     </td>
                     <td className="p-4 text-gray-300">{p.category_name}</td>
-                    <td className="p-4 text-white font-medium">${p.price}</td>
+                    <td className="p-4 text-white font-medium">{formatPrice(p.price)}</td>
                     <td className="p-4">
                       <input
                         type="number"
@@ -192,11 +193,11 @@ export default function AdminProducts() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Price *</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Price (PKR) *</label>
                   <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="input-field text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Compare Price</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Compare Price (PKR)</label>
                   <input type="number" step="0.01" value={form.compare_price} onChange={(e) => setForm({ ...form, compare_price: e.target.value })} className="input-field text-sm" />
                 </div>
                 <div>

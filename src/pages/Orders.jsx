@@ -5,6 +5,7 @@ import { Package, Clock } from 'lucide-react';
 import { getOrders } from '../api';
 import { useAuth } from '../context/StoreContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatPrice } from '../utils/currency';
 
 const statusColors = {
   pending: 'text-yellow-400 bg-yellow-400/10',
@@ -66,7 +67,7 @@ export default function Orders() {
                   <span className={`text-xs font-medium px-3 py-1 rounded-full capitalize ${statusColors[order.status]}`}>
                     {order.status}
                   </span>
-                  <span className="text-lg font-bold gold-text">${order.total}</span>
+                  <span className="text-lg font-bold gold-text">{formatPrice(order.total)}</span>
                 </div>
               </div>
 
@@ -74,7 +75,7 @@ export default function Orders() {
                 {order.items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-400">{item.product_name} × {item.quantity}</span>
-                    <span className="text-white">${item.price}</span>
+                    <span className="text-white">{formatPrice(item.price)}</span>
                   </div>
                 ))}
               </div>

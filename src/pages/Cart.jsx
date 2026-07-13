@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/StoreContext';
+import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '../utils/currency';
 
 export default function Cart() {
   const { cart, updateItem, removeItem } = useCart();
-  const shipping = cart.subtotal >= 100 ? 0 : 9.99;
+  const shipping = cart.subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
   const total = Number(cart.subtotal) + shipping;
 
   if (!cart.items?.length) {
@@ -55,7 +56,7 @@ export default function Cart() {
                       </h3>
                     </Link>
                     <p className="text-sm text-gray-500 mt-1">{item.product.category_name}</p>
-                    <p className="text-gold-400 font-semibold mt-2">${item.product.price}</p>
+                    <p className="text-gold-400 font-semibold mt-2">{formatPrice(item.product.price)}</p>
                   </div>
 
                   <div className="flex items-center justify-between mt-4">
@@ -76,7 +77,7 @@ export default function Cart() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <span className="font-semibold text-white">${item.total_price}</span>
+                      <span className="font-semibold text-white">{formatPrice(item.total_price)}</span>
                       <button
                         onClick={() => removeItem(item.id)}
                         className="text-gray-500 hover:text-red-400 transition-colors p-1"
@@ -102,22 +103,22 @@ export default function Cart() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-gray-400">
                 <span>Subtotal ({cart.total_items} items)</span>
-                <span className="text-white">${cart.subtotal}</span>
+                <span className="text-white">{formatPrice(cart.subtotal)}</span>
               </div>
               <div className="flex justify-between text-gray-400">
                 <span>Shipping</span>
-                <span className="text-white">{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                <span className="text-white">{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
               </div>
-              {cart.subtotal < 100 && (
+              {cart.subtotal < FREE_SHIPPING_THRESHOLD && (
                 <p className="text-xs text-gold-500/80">
-                  Add ${(100 - cart.subtotal).toFixed(2)} more for free shipping!
+                  Add {formatPrice(FREE_SHIPPING_THRESHOLD - cart.subtotal)} more for free shipping!
                 </p>
               )}
             </div>
 
             <div className="border-t border-dark-700 my-5 pt-5 flex justify-between">
               <span className="font-semibold text-white">Total</span>
-              <span className="text-xl font-bold gold-text">${total.toFixed(2)}</span>
+              <span className="text-xl font-bold gold-text">{formatPrice(total)}</span>
             </div>
 
             <Link to="/checkout" className="btn-primary w-full flex items-center justify-center gap-2">

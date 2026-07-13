@@ -5,6 +5,7 @@ import { Heart, ShoppingBag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth, useWishlist, useCart } from '../context/StoreContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { formatPrice } from '../utils/currency';
 
 export default function Wishlist() {
   const { user, loading: authLoading } = useAuth();
@@ -69,7 +70,7 @@ export default function Wishlist() {
                     {item.product.name}
                   </h3>
                 </Link>
-                <p className="text-lg font-semibold text-white mt-2">${item.product.price}</p>
+                <p className="text-lg font-semibold text-white mt-2">{formatPrice(item.product.price)}</p>
                 <button
                   onClick={() => handleAddToCart(item.product.id)}
                   className="btn-primary w-full mt-4 text-sm py-2.5 flex items-center justify-center gap-2"

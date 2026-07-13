@@ -5,6 +5,7 @@ import { ArrowRight, Truck, Shield, RefreshCw, Sparkles } from 'lucide-react';
 import { getFeaturedProducts, getCategories } from '../api';
 import ProductCard from '../components/ProductCard';
 import { ProductGridSkeleton } from '../components/LoadingSpinner';
+import { formatPrice, FREE_SHIPPING_THRESHOLD } from '../utils/currency';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -84,7 +85,7 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-10 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { icon: Truck, title: 'Free Shipping', desc: 'On orders over $100' },
+            { icon: Truck, title: 'Free Shipping', desc: `On orders over ${formatPrice(FREE_SHIPPING_THRESHOLD)}` },
             { icon: Shield, title: 'Secure Payment', desc: '100% protected checkout' },
             { icon: RefreshCw, title: 'Easy Returns', desc: '30-day return policy' },
           ].map((feat, i) => (

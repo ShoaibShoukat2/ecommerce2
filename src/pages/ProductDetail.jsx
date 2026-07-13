@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Star, Minus, Plus, ArrowLeft, Truck, Shield, Check, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatPrice, FREE_SHIPPING_THRESHOLD } from '../utils/currency';
 import { getProduct } from '../api';
 import { useCart, useAuth, useWishlist } from '../context/StoreContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -106,9 +107,9 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-baseline gap-3 mb-8">
-            <span className="text-3xl font-bold text-white">${product.price}</span>
+            <span className="text-3xl font-bold text-white">{formatPrice(product.price)}</span>
             {product.compare_price && (
-              <span className="text-xl text-gray-500 line-through">${product.compare_price}</span>
+              <span className="text-xl text-gray-500 line-through">{formatPrice(product.compare_price)}</span>
             )}
           </div>
 
@@ -166,7 +167,7 @@ export default function ProductDetail() {
               <Truck className="text-gold-400" size={20} />
               <div>
                 <p className="text-sm font-medium text-white">Free Shipping</p>
-                <p className="text-xs text-gray-500">Orders over $100</p>
+                <p className="text-xs text-gray-500">Orders over {formatPrice(FREE_SHIPPING_THRESHOLD)}</p>
               </div>
             </div>
             <div className="card-premium p-4 flex items-center gap-3">
