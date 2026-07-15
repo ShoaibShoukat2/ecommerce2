@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, User, Menu, X, Search, Heart, Shield } from 'lucide-react';
 import { useCart, useAuth } from '../context/StoreContext';
+import TermsAlert from './TermsAlert';
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,6 +33,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <TermsAlert />
       <header className="fixed top-0 left-0 right-0 z-50 bg-dark-950/80 backdrop-blur-xl border-b border-dark-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
@@ -205,12 +207,13 @@ export default function Layout() {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
+              <h4 className="font-semibold text-white mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-gold-400 transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-gold-400 transition-colors">Shipping Info</a></li>
-                <li><a href="#" className="hover:text-gold-400 transition-colors">Returns</a></li>
-                <li><a href="#" className="hover:text-gold-400 transition-colors">FAQ</a></li>
+                <li><Link to="/terms" className="hover:text-gold-400 transition-colors">Terms & Conditions</Link></li>
+                <li><Link to="/terms#privacy-policy" className="hover:text-gold-400 transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms#refund-and-cancellation-policy" className="hover:text-gold-400 transition-colors">Refund Policy</Link></li>
+                <li><Link to="/terms#return-policy" className="hover:text-gold-400 transition-colors">Return Policy</Link></li>
+                <li><Link to="/terms#shipping-policy" className="hover:text-gold-400 transition-colors">Shipping Policy</Link></li>
               </ul>
             </div>
             <div>

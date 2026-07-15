@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import Orders from './pages/Orders';
 import OrderSuccess from './pages/OrderSuccess';
 import Wishlist from './pages/Wishlist';
+import TermsConditions from './pages/TermsConditions';
 import AdminGuard from './admin/AdminGuard';
 import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/pages/Dashboard';
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="orders" element={<Orders />} />
         <Route path="wishlist" element={<Wishlist />} />
         <Route path="order-success/:orderNumber" element={<OrderSuccess />} />
+        <Route path="terms" element={<TermsConditions />} />
       </Route>
 
       <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
