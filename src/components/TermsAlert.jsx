@@ -55,8 +55,8 @@ export default function TermsAlert() {
                     Terms & Conditions
                   </h2>
                   <p className="text-gray-400 text-sm leading-relaxed mb-4">
-                    By accessing and using UK Services (ukviservices.co.uk), you agree to our Terms of Use,
-                    Privacy Policy, Refund & Cancellation Policy, Return Policy, and Shipping Policy.
+                    By accessing and using UKVI Services (ukviservices.com), you agree to our Terms & Conditions,
+                    Privacy Policy, Refund & Cancellation Policy, Return & Exchange Policy, and Shipping Policy.
                     Please review these documents before proceeding.
                   </p>
                   <div className="flex flex-wrap gap-3">

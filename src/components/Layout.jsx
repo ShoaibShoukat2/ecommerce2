@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, User, Menu, X, Search, Heart, Shield } from 'lucide-react';
+import { ShoppingBag, User, Menu, X, Search, Heart, Shield, ChevronDown, FileText } from 'lucide-react';
 import { useCart, useAuth } from '../context/StoreContext';
 import TermsAlert from './TermsAlert';
 
@@ -9,6 +9,9 @@ export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [policiesOpen, setPoliciesOpen] = useState(false);
+  const [mobilePoliciesOpen, setMobilePoliciesOpen] = useState(false);
+  const policiesRef = useRef(null);
   const { cart } = useCart();
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -21,6 +24,24 @@ export default function Layout() {
     { to: '/shop/fashion', label: 'Fashion' },
     { to: '/shop/home', label: 'Home & Living' },
   ];
+
+  const policyLinks = [
+    { to: '/terms', label: 'Terms & Conditions' },
+    { to: '/terms#privacy-policy', label: 'Privacy Policy' },
+    { to: '/terms#refund-and-cancellation-policy', label: 'Refund & Cancellation' },
+    { to: '/terms#return-policy', label: 'Return & Exchange' },
+    { to: '/terms#shipping-policy', label: 'Shipping Policy' },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (policiesRef.current && !policiesRef.current.contains(e.target)) {
+        setPoliciesOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -59,6 +80,40 @@ export default function Layout() {
                   {link.label}
                 </Link>
               ))}
+
+              <div className="relative" ref={policiesRef}>
+                <button
+                  onClick={() => setPoliciesOpen(!policiesOpen)}
+                  className={`flex items-center gap-1 text-sm font-medium transition-colors duration-200 hover:text-gold-400 ${
+                    location.pathname === '/terms' ? 'text-gold-400' : 'text-gray-300'
+                  }`}
+                >
+                  <FileText size={15} />
+                  Policies
+                  <ChevronDown size={14} className={`transition-transform ${policiesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {policiesOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="absolute top-full left-0 mt-2 w-56 py-2 bg-dark-900 border border-dark-700 rounded-xl shadow-xl shadow-black/40 z-50"
+                    >
+                      {policyLinks.map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          onClick={() => setPoliciesOpen(false)}
+                          className="block px-4 py-2.5 text-sm text-gray-300 hover:text-gold-400 hover:bg-dark-800 transition-colors"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </nav>
 
             <div className="flex items-center gap-3 md:gap-5">
@@ -148,6 +203,38 @@ export default function Layout() {
                     {link.label}
                   </Link>
                 ))}
+
+                <div>
+                  <button
+                    onClick={() => setMobilePoliciesOpen(!mobilePoliciesOpen)}
+                    className="flex items-center gap-2 text-gray-300 hover:text-gold-400 py-2 transition-colors w-full"
+                  >
+                    <FileText size={16} />
+                    Policies
+                    <ChevronDown size={14} className={`ml-auto transition-transform ${mobilePoliciesOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {mobilePoliciesOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden pl-4 border-l border-dark-700 ml-2"
+                      >
+                        {policyLinks.map((link) => (
+                          <Link
+                            key={link.to}
+                            to={link.to}
+                            onClick={() => { setMobileOpen(false); setMobilePoliciesOpen(false); }}
+                            className="block text-gray-400 hover:text-gold-400 py-2 text-sm transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
                 {!user && (
                   <Link to="/login" onClick={() => setMobileOpen(false)} className="text-gray-300 hover:text-gold-400 py-2">
                     Login / Register
@@ -211,8 +298,8 @@ export default function Layout() {
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><Link to="/terms" className="hover:text-gold-400 transition-colors">Terms & Conditions</Link></li>
                 <li><Link to="/terms#privacy-policy" className="hover:text-gold-400 transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms#refund-and-cancellation-policy" className="hover:text-gold-400 transition-colors">Refund Policy</Link></li>
-                <li><Link to="/terms#return-policy" className="hover:text-gold-400 transition-colors">Return Policy</Link></li>
+                <li><Link to="/terms#refund-and-cancellation-policy" className="hover:text-gold-400 transition-colors">Refund & Cancellation</Link></li>
+                <li><Link to="/terms#return-policy" className="hover:text-gold-400 transition-colors">Return & Exchange</Link></li>
                 <li><Link to="/terms#shipping-policy" className="hover:text-gold-400 transition-colors">Shipping Policy</Link></li>
               </ul>
             </div>
