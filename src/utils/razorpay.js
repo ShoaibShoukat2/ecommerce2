@@ -31,12 +31,12 @@ export function loadRazorpayScript() {
   return scriptPromise;
 }
 
-export function openRazorpayCheckout({ keyId, orderId, amount, currency, name, email, phone, onSuccess, onDismiss }) {
+export function openRazorpayCheckout({ keyId, orderId, amount, currency, name, email, phone, onSuccess, onDismiss, onPaymentFailed }) {
   const options = {
     key: keyId,
     amount,
     currency,
-    name: name || 'Kryn & Moey',
+    name: 'Kryn & Moey',
     description: 'Order Payment',
     order_id: orderId,
     prefill: {
@@ -48,10 +48,26 @@ export function openRazorpayCheckout({ keyId, orderId, amount, currency, name, e
     handler: onSuccess,
     modal: {
       ondismiss: onDismiss,
+      // Prevent Razorpay from auto-closing on escape without firing ondismiss
+      escape: false,
+      confirm_close: false,
     },
   };
 
-  const razorpay = new window.Razorpay(options);
+  let razorpay;
+  try {
+    razorpay = new window.Razorpay(options);
+  } catch (err) {
+    throw new Error('Failed to initialize payment gateway: ' + err.message);
+  }
+
+  // Handle payment failure events (network errors, card declined, etc.)
+  razorpay.on('payment.failed', (response) => {
+    if (onPaymentFailed) {
+      onPaymentFailed(response.error);
+    }
+  });
+
   razorpay.open();
   return razorpay;
 }

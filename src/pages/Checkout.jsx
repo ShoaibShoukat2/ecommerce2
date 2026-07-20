@@ -61,40 +61,56 @@ export default function Checkout() {
     setPaymentStep('idle');
 
     return new Promise((resolve, reject) => {
-      openRazorpayCheckout({
-        keyId: paymentOrder.key_id,
-        orderId: paymentOrder.razorpay_order_id,
-        amount: paymentOrder.amount,   // paise — correct for Razorpay
-        currency: paymentOrder.currency,
-        name: form.shipping_name,
-        email: form.shipping_email,
-        phone: form.shipping_phone,
-        onSuccess: async (response) => {
-          setLoading(true);
-          setPaymentStep('verifying');
-          try {
-            const { data } = await verifyRazorpayPayment({
-              ...form,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-            await completeOrder(data.order_number);
-            resolve(data);
-          } catch (err) {
+      let razorpayInstance;
+      try {
+        razorpayInstance = openRazorpayCheckout({
+          keyId: paymentOrder.key_id,
+          orderId: paymentOrder.razorpay_order_id,
+          amount: paymentOrder.amount,   // paise — correct for Razorpay
+          currency: paymentOrder.currency,
+          name: form.shipping_name,
+          email: form.shipping_email,
+          phone: form.shipping_phone,
+          onSuccess: async (response) => {
+            setLoading(true);
+            setPaymentStep('verifying');
+            try {
+              const { data } = await verifyRazorpayPayment({
+                ...form,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              await completeOrder(data.order_number);
+              resolve(data);
+            } catch (err) {
+              setLoading(false);
+              setPaymentStep('idle');
+              toast.error(err.response?.data?.error || 'Payment verification failed');
+              reject(err);
+            }
+          },
+          onDismiss: () => {
             setLoading(false);
             setPaymentStep('idle');
-            toast.error(err.response?.data?.error || 'Payment verification failed');
-            reject(err);
-          }
-        },
-        onDismiss: () => {
-          setLoading(false);
-          setPaymentStep('idle');
-          toast.error('Payment cancelled');
-          reject(new Error('Payment cancelled'));
-        },
-      });
+            toast.error('Payment cancelled');
+            reject(new Error('Payment cancelled'));
+          },
+          onPaymentFailed: (error) => {
+            setLoading(false);
+            setPaymentStep('idle');
+            const msg = error?.description || error?.reason || 'Payment failed. Please try again.';
+            toast.error(msg);
+            reject(new Error(msg));
+          },
+        });
+      } catch (err) {
+        // openRazorpayCheckout itself threw (e.g. invalid key, initialization error)
+        setLoading(false);
+        setPaymentStep('idle');
+        toast.error(err.message || 'Could not open payment gateway');
+        reject(err);
+      }
     });
   };
 
