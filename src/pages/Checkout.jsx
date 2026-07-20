@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CreditCard, Lock } from 'lucide-react';
+import { CreditCard, Lock, Banknote } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { checkout } from '../api';
+import { checkout, createRazorpayOrder, verifyRazorpayPayment } from '../api';
 import { useCart } from '../context/StoreContext';
 import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '../utils/currency';
+import { loadRazorpayScript, openRazorpayCheckout } from '../utils/razorpay';
 
 export default function Checkout() {
   const { cart, clear } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [form, setForm] = useState({
     shipping_name: '',
     shipping_email: '',
@@ -28,16 +30,64 @@ export default function Checkout() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const completeOrder = async (orderNumber) => {
+    await clear();
+    toast.success('Order placed successfully!');
+    navigate(`/order-success/${orderNumber}`);
+  };
+
+  const handleRazorpayPayment = async () => {
+    await loadRazorpayScript();
+    const { data: paymentOrder } = await createRazorpayOrder(form);
+
+    return new Promise((resolve, reject) => {
+      openRazorpayCheckout({
+        keyId: paymentOrder.key_id,
+        orderId: paymentOrder.razorpay_order_id,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: form.shipping_name,
+        email: form.shipping_email,
+        phone: form.shipping_phone,
+        onSuccess: async (response) => {
+          try {
+            const { data } = await verifyRazorpayPayment({
+              ...form,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            await completeOrder(data.order_number);
+            resolve(data);
+          } catch (err) {
+            toast.error(err.response?.data?.error || 'Payment verification failed');
+            reject(err);
+          }
+        },
+        onDismiss: () => {
+          toast.error('Payment cancelled');
+          reject(new Error('Payment cancelled'));
+        },
+      });
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data } = await checkout(form);
-      await clear();
-      toast.success('Order placed successfully!');
-      navigate(`/order-success/${data.order_number}`);
+      if (paymentMethod === 'razorpay') {
+        await handleRazorpayPayment();
+      } else {
+        const { data } = await checkout(form);
+        await completeOrder(data.order_number);
+      }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Checkout failed');
+      if (!err.response && err.message !== 'Payment cancelled') {
+        toast.error(err.message || 'Checkout failed');
+      } else if (err.response) {
+        toast.error(err.response?.data?.error || 'Checkout failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,11 +148,44 @@ export default function Checkout() {
 
           <div className="card-premium p-6">
             <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
-              <CreditCard size={20} className="text-gold-400" /> Payment
+              <CreditCard size={20} className="text-gold-400" /> Payment Method
             </h2>
-            <p className="text-gray-400 text-sm">
-              Payment integration can be added here (Stripe, PayPal, etc.). For now, orders are placed with Cash on Delivery.
-            </p>
+            <div className="space-y-3">
+              <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
+                paymentMethod === 'razorpay' ? 'border-gold-400 bg-gold-400/10' : 'border-dark-700 hover:border-dark-600'
+              }`}>
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="razorpay"
+                  checked={paymentMethod === 'razorpay'}
+                  onChange={() => setPaymentMethod('razorpay')}
+                  className="accent-gold-400"
+                />
+                <CreditCard size={18} className="text-gold-400 shrink-0" />
+                <div>
+                  <p className="text-white font-medium">Pay with Razorpay</p>
+                  <p className="text-gray-400 text-sm">UPI, cards, net banking & wallets</p>
+                </div>
+              </label>
+              <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
+                paymentMethod === 'cod' ? 'border-gold-400 bg-gold-400/10' : 'border-dark-700 hover:border-dark-600'
+              }`}>
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="cod"
+                  checked={paymentMethod === 'cod'}
+                  onChange={() => setPaymentMethod('cod')}
+                  className="accent-gold-400"
+                />
+                <Banknote size={18} className="text-gold-400 shrink-0" />
+                <div>
+                  <p className="text-white font-medium">Cash on Delivery</p>
+                  <p className="text-gray-400 text-sm">Pay when your order arrives</p>
+                </div>
+              </label>
+            </div>
           </div>
         </motion.div>
 
@@ -144,7 +227,11 @@ export default function Checkout() {
             className="btn-primary w-full mt-6 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Lock size={16} />
-            {loading ? 'Processing...' : 'Place Order'}
+            {loading
+              ? 'Processing...'
+              : paymentMethod === 'razorpay'
+                ? `Pay ${formatPrice(total)}`
+                : 'Place Order'}
           </motion.button>
         </motion.div>
       </form>
