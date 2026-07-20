@@ -13,8 +13,19 @@ export function loadRazorpayScript() {
     const script = document.createElement('script');
     script.src = RAZORPAY_SCRIPT_URL;
     script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => reject(new Error('Failed to load Razorpay'));
+    script.onload = () => {
+      if (window.Razorpay) {
+        resolve(true);
+      } else {
+        scriptPromise = null;
+        reject(new Error('Razorpay SDK not available after load'));
+      }
+    };
+    script.onerror = () => {
+      scriptPromise = null; // reset so next attempt retries
+      document.body.removeChild(script);
+      reject(new Error('Failed to load Razorpay. Check your internet connection.'));
+    };
     document.body.appendChild(script);
   });
   return scriptPromise;

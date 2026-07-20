@@ -37,13 +37,19 @@ export default function Checkout() {
   };
 
   const handleRazorpayPayment = async () => {
-    await loadRazorpayScript();
+    try {
+      await loadRazorpayScript();
+    } catch (err) {
+      throw new Error('Could not load payment gateway. Please check your connection and try again.');
+    }
+
     const { data: paymentOrder } = await createRazorpayOrder(form);
 
     return new Promise((resolve, reject) => {
       openRazorpayCheckout({
         keyId: paymentOrder.key_id,
         orderId: paymentOrder.razorpay_order_id,
+        // amount is in paise — correct for Razorpay API
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
         name: form.shipping_name,
@@ -65,7 +71,6 @@ export default function Checkout() {
           }
         },
         onDismiss: () => {
-          toast.error('Payment cancelled');
           reject(new Error('Payment cancelled'));
         },
       });
@@ -83,10 +88,12 @@ export default function Checkout() {
         await completeOrder(data.order_number);
       }
     } catch (err) {
-      if (!err.response && err.message !== 'Payment cancelled') {
-        toast.error(err.message || 'Checkout failed');
+      if (err.message === 'Payment cancelled') {
+        toast.error('Payment cancelled');
       } else if (err.response) {
         toast.error(err.response?.data?.error || 'Checkout failed');
+      } else {
+        toast.error(err.message || 'Checkout failed');
       }
     } finally {
       setLoading(false);
