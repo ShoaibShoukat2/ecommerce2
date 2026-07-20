@@ -12,6 +12,7 @@ export default function Checkout() {
   const { cart, clear } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [paymentStep, setPaymentStep] = useState('idle'); // idle | creating | verifying
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [form, setForm] = useState({
     shipping_name: '',
@@ -37,25 +38,40 @@ export default function Checkout() {
   };
 
   const handleRazorpayPayment = async () => {
+    // Step 1: Load Razorpay script
     try {
       await loadRazorpayScript();
     } catch (err) {
-      throw new Error('Could not load payment gateway. Please check your connection and try again.');
+      throw new Error('Could not load payment gateway. Please check your internet connection.');
     }
 
-    const { data: paymentOrder } = await createRazorpayOrder(form);
+    // Step 2: Create order on backend
+    setPaymentStep('creating');
+    let paymentOrder;
+    try {
+      const { data } = await createRazorpayOrder(form);
+      paymentOrder = data;
+    } catch (err) {
+      throw err;
+    }
+
+    // Step 3: Open Razorpay modal
+    // Reset loading so button is not stuck — Razorpay handles UI from here
+    setLoading(false);
+    setPaymentStep('idle');
 
     return new Promise((resolve, reject) => {
       openRazorpayCheckout({
         keyId: paymentOrder.key_id,
         orderId: paymentOrder.razorpay_order_id,
-        // amount is in paise — correct for Razorpay API
-        amount: paymentOrder.amount,
+        amount: paymentOrder.amount,   // paise — correct for Razorpay
         currency: paymentOrder.currency,
         name: form.shipping_name,
         email: form.shipping_email,
         phone: form.shipping_phone,
         onSuccess: async (response) => {
+          setLoading(true);
+          setPaymentStep('verifying');
           try {
             const { data } = await verifyRazorpayPayment({
               ...form,
@@ -66,11 +82,16 @@ export default function Checkout() {
             await completeOrder(data.order_number);
             resolve(data);
           } catch (err) {
+            setLoading(false);
+            setPaymentStep('idle');
             toast.error(err.response?.data?.error || 'Payment verification failed');
             reject(err);
           }
         },
         onDismiss: () => {
+          setLoading(false);
+          setPaymentStep('idle');
+          toast.error('Payment cancelled');
           reject(new Error('Payment cancelled'));
         },
       });
@@ -80,6 +101,7 @@ export default function Checkout() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setPaymentStep('creating');
     try {
       if (paymentMethod === 'razorpay') {
         await handleRazorpayPayment();
@@ -88,16 +110,26 @@ export default function Checkout() {
         await completeOrder(data.order_number);
       }
     } catch (err) {
-      if (err.message === 'Payment cancelled') {
-        toast.error('Payment cancelled');
-      } else if (err.response) {
-        toast.error(err.response?.data?.error || 'Checkout failed');
-      } else {
-        toast.error(err.message || 'Checkout failed');
+      if (err.message !== 'Payment cancelled') {
+        // Payment cancelled toast already shown in onDismiss
+        if (err.response) {
+          toast.error(err.response?.data?.error || 'Checkout failed');
+        } else if (err.message) {
+          toast.error(err.message);
+        }
       }
     } finally {
       setLoading(false);
+      setPaymentStep('idle');
     }
+  };
+
+  const getButtonLabel = () => {
+    if (paymentStep === 'creating') return 'Creating order...';
+    if (paymentStep === 'verifying') return 'Verifying payment...';
+    if (loading) return 'Processing...';
+    if (paymentMethod === 'razorpay') return `Pay ${formatPrice(total)}`;
+    return 'Place Order';
   };
 
   if (!cart.items?.length) {
@@ -234,11 +266,7 @@ export default function Checkout() {
             className="btn-primary w-full mt-6 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Lock size={16} />
-            {loading
-              ? 'Processing...'
-              : paymentMethod === 'razorpay'
-                ? `Pay ${formatPrice(total)}`
-                : 'Place Order'}
+            {getButtonLabel()}
           </motion.button>
         </motion.div>
       </form>
