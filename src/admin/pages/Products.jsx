@@ -193,11 +193,11 @@ export default function AdminProducts() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Price (PKR) *</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Price (INR) *</label>
                   <input required type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="input-field text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Compare Price (PKR)</label>
+                  <label className="text-xs text-gray-400 mb-1 block">Compare Price (INR)</label>
                   <input type="number" step="0.01" value={form.compare_price} onChange={(e) => setForm({ ...form, compare_price: e.target.value })} className="input-field text-sm" />
                 </div>
                 <div>
