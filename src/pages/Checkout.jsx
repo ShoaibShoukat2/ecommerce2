@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { checkout, createRazorpayOrder, verifyRazorpayPayment } from '../api';
 import { useCart } from '../context/StoreContext';
 import { formatPrice, FREE_SHIPPING_THRESHOLD, SHIPPING_COST } from '../utils/currency';
-import { loadRazorpayScript, openRazorpayCheckout } from '../utils/razorpay';
+import { loadRazorpayScript, openRazorpayCheckout, formatRazorpayError } from '../utils/razorpay';
 
 export default function Checkout() {
   const { cart, clear } = useCart();
@@ -66,8 +66,6 @@ export default function Checkout() {
         razorpayInstance = openRazorpayCheckout({
           keyId: paymentOrder.key_id,
           orderId: paymentOrder.razorpay_order_id,
-          amount: paymentOrder.amount,   // paise — correct for Razorpay
-          currency: paymentOrder.currency,
           name: form.shipping_name,
           email: form.shipping_email,
           phone: form.shipping_phone,
@@ -94,14 +92,14 @@ export default function Checkout() {
             setLoading(false);
             setPaymentStep('idle');
             toast.error('Payment cancelled');
-            reject(new Error('Payment cancelled'));
+            reject(Object.assign(new Error('Payment cancelled'), { paymentHandled: true }));
           },
           onPaymentFailed: (error) => {
             setLoading(false);
             setPaymentStep('idle');
-            const msg = error?.description || error?.reason || 'Payment failed. Please try again.';
+            const msg = formatRazorpayError(error);
             toast.error(msg);
-            reject(new Error(msg));
+            reject(Object.assign(new Error(msg), { paymentHandled: true }));
           },
         });
       } catch (err) {
@@ -126,8 +124,7 @@ export default function Checkout() {
         await completeOrder(data.order_number);
       }
     } catch (err) {
-      if (err.message !== 'Payment cancelled') {
-        // Payment cancelled toast already shown in onDismiss
+      if (!err.paymentHandled) {
         if (err.response) {
           toast.error(err.response?.data?.error || 'Checkout failed');
         } else if (err.message) {
@@ -221,6 +218,7 @@ export default function Checkout() {
                 <div>
                   <p className="text-white font-medium">Pay with Razorpay</p>
                   <p className="text-gray-400 text-sm">UPI, cards, net banking & wallets</p>
+                  <p className="text-amber-400/80 text-xs mt-1">Use a real card or UPI in live mode. Test cards (4111…) only work with test keys.</p>
                 </div>
               </label>
               <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${

@@ -2,6 +2,14 @@ const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
 let scriptPromise = null;
 
+/** Normalize phone for Razorpay (expects +91XXXXXXXXXX for India). */
+export function normalizeIndianPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
+  return digits ? `+${digits}` : '';
+}
+
 export function loadRazorpayScript() {
   if (window.Razorpay) {
     return Promise.resolve(true);
@@ -22,8 +30,10 @@ export function loadRazorpayScript() {
       }
     };
     script.onerror = () => {
-      scriptPromise = null; // reset so next attempt retries
-      document.body.removeChild(script);
+      scriptPromise = null;
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
       reject(new Error('Failed to load Razorpay. Check your internet connection.'));
     };
     document.body.appendChild(script);
@@ -31,26 +41,40 @@ export function loadRazorpayScript() {
   return scriptPromise;
 }
 
-export function openRazorpayCheckout({ keyId, orderId, amount, currency, name, email, phone, onSuccess, onDismiss, onPaymentFailed }) {
+export function formatRazorpayError(error) {
+  if (!error) return 'Payment failed. Please try again.';
+
+  const stepMessages = {
+    payment_authentication: 'Bank authentication failed or timed out. Try UPI or another payment method.',
+    payment_authorization: 'Payment was declined by your bank. Try a different card or UPI.',
+  };
+
+  if (error.step && stepMessages[error.step]) {
+    return stepMessages[error.step];
+  }
+
+  return error.description || error.reason || 'Payment failed. Please try again.';
+}
+
+export function openRazorpayCheckout({ keyId, orderId, name, email, phone, onSuccess, onDismiss, onPaymentFailed }) {
   const options = {
     key: keyId,
-    amount,
-    currency,
+    // Amount & currency come from the order created on the server — do not pass separately.
+    order_id: orderId,
     name: 'Kryn & Moey',
     description: 'Order Payment',
-    order_id: orderId,
     prefill: {
       name: name || '',
       email: email || '',
-      contact: phone || '',
+      contact: normalizeIndianPhone(phone),
     },
     theme: { color: '#C9A227' },
+    retry: { enabled: true, max_count: 3 },
     handler: onSuccess,
     modal: {
       ondismiss: onDismiss,
-      // Prevent Razorpay from auto-closing on escape without firing ondismiss
-      escape: false,
-      confirm_close: false,
+      confirm_close: true,
+      backdropclose: false,
     },
   };
 
@@ -61,7 +85,6 @@ export function openRazorpayCheckout({ keyId, orderId, amount, currency, name, e
     throw new Error('Failed to initialize payment gateway: ' + err.message);
   }
 
-  // Handle payment failure events (network errors, card declined, etc.)
   razorpay.on('payment.failed', (response) => {
     if (onPaymentFailed) {
       onPaymentFailed(response.error);
